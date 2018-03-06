@@ -1,0 +1,71 @@
+一.软件说明：
+rbac基于Django开发的通用的权限管理app。
+二.使用：
+1.在settings中注册app
+INSTALLED_APPS = [
+    'django.contrib.admin',
+    'django.contrib.auth',
+    'django.contrib.contenttypes',
+    'django.contrib.sessions',
+    'django.contrib.messages',
+    'django.contrib.staticfiles',
+    '.........'
+    'rbac',
+]
+2.在settings中注册中间件
+MIDDLEWARE = [
+    'django.middleware.security.SecurityMiddleware',
+   'rbac.middleware.rbac_middleware.RbacMiddleware',
+]
+3.在settings中的其他配置
+#RBACQ权限管理配置开始------------------------------>>>>
+RBAC_NO_AUTH_URL=[]           #不需要被验证的URL
+
+RBAC_PERMISSION_SESSION_KEY='rbac_permission_session_key'     #写入session中的权限信息的KEY
+
+RBAC_PERMISSION_MSG='无权限访问'           #当没权限时的提示信息
+RBAC_QUERY_KEY='md'              #操作方式 http://ppppp.com/view/?md=GET 操作方式的键
+RBAC_DEFAULT_QUERY_KEY_VALUE='GET' #默认的操作方式
+
+# Session中保存菜单和权限信息的Key
+RBAC_MENU_PERMISSION_SESSION_KEY = "rbac_menu_permission_session_key"  #保存菜单及权限信息到session中的key
+RBAC_MENU_KEY = "rbac_menu_key"                  #菜单的key
+RBAC_MENU_PERMISSION_KEY = "rbac_menu_permission_key"  #权限信息的key，参考下方
+登录成功会将权限及菜单的信息保存到session中
+'''
+    request.session[settings.RBAC_MENU_PERMISSION_SESSION_KEY] = {
+        settings.RBAC_MENU_KEY: all_menu_list,
+        settings.RBAC_MENU_PERMISSION_KEY: permission_list
+    }
+'''
+
+#菜单主题配置
+RBAC_THEME='default'
+
+
+4.请求传入的方式
+http://ppppp.com/view/?md=GET
+
+5.使用实例：登录成功将权限信息写入session中
+from rbac,permission_session_process import init_permission_session
+init_permission_session(request,id) #初始化 ，参数request，id 为内建表User的自增id
+
+from rbac.permission_session_process import init_permission_session
+
+def login(request,*args,**kwargs):
+    if request.method=='GET':
+        return render(request,'login.html')
+    else:
+        user_name=request.POST.get('username')
+        user_obj=models.User.objects.filter(username=user_name).first()
+        init_permission_session(request,user_obj.id)   #初始化权限信息到session中
+        return render(request,'login2.html')
+
+ views.py 中的业务函数
+ def func(request):
+    if request.request_permission_code=='GET':
+        pass
+      elif request.request_permission_code=='POST':
+        pass
+6.生成菜单页面HTML
+在HTML文件中导入templatetags中的simpletag即可
